@@ -1,1 +1,1 @@
-![scandalous_full.png](https://bitbucket.org/repo/doeRBx/images/580212782-scandalous_full.png =250x)
+![scandalous_full.png](https://bitbucket.org/repo/doeRBx/images/580212782-scandalous_full.png =100x)
