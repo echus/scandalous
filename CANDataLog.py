@@ -38,8 +38,6 @@ class CANDataLog:
 	def update(self, speed):
 		try:
 			cur = self.con.cursor()
-			packet = self.poll(qnode, qchannel)
-			#perform any scaling needs here
 			cur.execute("INSERT INTO PACKETS_RAW VALUES(?,)", speed)
 
 		except lite.Error, e:
