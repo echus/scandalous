@@ -53,7 +53,7 @@ class CANDataLog:
 #Updates packet data table every 5 seconds when thread started
 class updateDB(threading.Thread):
 	def __init__(self, event, name):
-		threading.Thread.__unit__(self)
+		threading.Thread.__init__(self)
 		self.stopped = event
 		data_log = CANDataLog()
 	
