@@ -3,29 +3,30 @@ import sys
 import threading
 
 #Make these 
+
 #import channels
 #import nodes
 
-class CANDataLog:
+class CANDataLogger:
+	#Connect to Scanalysis Database
 	def __init__(self):
-        #Connect to Scanalysis Database
-		con = lite.connect('Scanalysis.db')
-        #Initialise clean packet data table
+		self.update_count = 0
+		con = lite.connect('test_SCDB.db')
 		cur = con.cursor()
-		with cur:
+		with con:
 			cur.execute("DROP TABLE IF EXISTS PACKETS_DATA")
 			#add whatever items we want to keep track of
 			cur.execute("""CREATE TABLE PACKETS_DATA
-						(Id INT PRIMARY KEY, speed REAL""")
+						(Id INT PRIMARY KEY, speed REAL)""")
 		
 		
 	#Returns most recent packet in database with requested node and channel	
-	def poll(self, qnode, qchannel):
+	def poll(self, con, qnode, qchannel):
+		cur = con.cursor()
 		try:
-			cur = self.con.cursor()
 			cur.execute("""SELECT MAX(TIME), DATA FROM PACKETS_RAW
-						WHERE NODE = ? AND CHANNEL = ?""", (qnode, qchannel)
-			return cur.fetchone()
+						WHERE NODE = ? AND CHANNEL = ?""", (qnode, qchannel))
+			return cur.fetchone()[1]
 			
 		except lite.Error, e:
 			print "Error %s:" % e.args[0]
@@ -34,11 +35,12 @@ class CANDataLog:
 		finally:
 			cur.close()
 		
-    #Update packet data table
-	def update(self, speed):
+	def update(self, con, speed):
+		self.update_count += 1
+		cur = con.cursor()
 		try:
-			cur = self.con.cursor()
-			cur.execute("INSERT INTO PACKETS_RAW VALUES(?,)", speed)
+			#print('insertingsu')
+			cur.execute("INSERT INTO PACKETS_DATA VALUES(?, ?)", (self.update_count, speed))
 
 		except lite.Error, e:
 			print "Error %s:" % e.args[0]
@@ -48,17 +50,35 @@ class CANDataLog:
 			cur.close()
 			
 			
-#Updates packet data table every 5 seconds when thread started
+			
 class updateDB(threading.Thread):
-	def __init__(self, event, name):
+	def __init__(self, event):
 		threading.Thread.__init__(self)
 		self.stopped = event
-		data_log = CANDataLog()
+		self.data_log = CANDataLogger()
 	
 	def run(self):
-		while not self.stopped.wait(5):
-			speed = self.data_log.poll(SPEEDNODE, SPEEDCHANNEL)
-			#Do this for all wanted values
+		con = lite.connect('test_SCDB.db')
+		with con:
+			while not self.stopped.wait(5):
+				print('Running thread \n')
+				speed = self.data_log.poll(con, 1, 1)
+				#Do this for all wanted values
+				#print('Data value is %f' %speed)
+				#Update entries in database
+				self.data_log.update(con, speed)
 			
-			#Update entries in database
-			self.data_log.update(speed)
+			
+		
+		
+			
+		
+		
+		
+		
+		
+	
+			
+			  
+		
+		
