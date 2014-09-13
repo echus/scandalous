@@ -17,13 +17,6 @@ PKT_LEN = 18
 
 PORT_DEFAULT = "/dev/ttyUSB0"
 
-class Packet:
-    def __init__(self, address, channel, time, data):
-        self.address = address
-        self.channel = channel
-        self.time = time
-        self.data = data
-
 class CANDriver:
     def __init__(self, port=PORT_DEFAULT):
         # Database for logging received packets
