@@ -73,10 +73,10 @@ class CANDriver:
         self.__read_thread.start()
 
         # TESTING - print all packets in queue while thread is running
-        while True:
-            pkt = self.__read_thread.packets.get()
-            print("Got packet", pkt)
-            self.__read_thread.packets.task_done()
+        #while True:
+        #    pkt = self.__read_thread.packets.get()
+        #    print("Got packet", pkt)
+        #    self.__read_thread.packets.task_done()
 
     def connect(self):
         """Attempt to connect to Driver's specified serial port"""
@@ -124,6 +124,7 @@ class CANReadThread(threading.Thread):
             
             #print("Read datastream")
             # Read each serial data char
+            testing = 0
             for charind, char in enumerate(datastream):
 
                 #print(chr(char), end="")
@@ -155,10 +156,13 @@ class CANReadThread(threading.Thread):
                     # Calculate ID
                     pkt_id   = self.calc_packet_id(packet)
                     pkt_data = self.calc_packet_data(packet)
+                    pkt = Packet(pkt_id, pkt_data)
+
+                    print("Packet received", pkt)
 
                     # Queue packet
                     self.packets.put(Packet(pkt_id, pkt_data))
-                    
+
                     # TESTING stop after 100 packets to check running
                     qsize = self.packets.qsize()
                     print("Packets queued", qsize)
