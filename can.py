@@ -10,14 +10,24 @@ from queue import Queue
 BAUD = 115200
 RX_BUF_LEN = 216
 
-PKT_DELIM = "UNSW"
+PKT_DELIM = b'UNSW'
 PKT_DELIM_LEN = 4
 
 PKT_LEN = 18
 
+RX_DEL_LSB_INDEX  = 0
+RX_DEL_MSB_INDEX  = 3
+RX_ID_LSB_INDEX   = 4
+RX_ID_MSB_INDEX   = 7
+RX_DATA_LSB_INDEX = 8
+RX_DATA_MSB_INDEX = 15
+RX_LEN_INDEX      = 16
+RX_CHKSUM_INDEX   = 17
+
 PORT_DEFAULT = "/dev/ttyUSB0"
 
 class Packet:
+    """Object for storing CAN packet"""
     def __init__(self, address, channel, time, data):
         self.address = address
         self.channel = channel
@@ -42,34 +52,32 @@ class CANDriver:
         self.active = False
 
         # Threads
-        self.__read_thread = threading.Thread(target=self.read)
-        self.__read_thread.daemon = True # TODO needed??
+        self.__read_thread = None
         #self.__send_thread = None
-        self.__log_thread = None
+        self.__write_thread = None
 
         # Start driver
         #self.run()
 
     def run(self):
-        self.__running = True
-        print("Running")
+        print("CANDriver run() called")
         
         # Connect to serial port
-        self.connect()
-        print("Connected")
+        ser = self.connect()
+        print("Connected to serial port")
         
         # Start reading packets
+        self.__read_thread = CANReadThread(ser)
         self.__read_thread.start()
 
     def connect(self):
         """Attempt to connect to Driver's specified serial port"""
-        while self.__running:
+        while True:
             # Attempt to connect to serial port
             try:
-                self.__serial = serial.Serial(self.__port, BAUD)
-                self.__serial.write(b'rrr') # For CANUSB: enter raw mode
-                self.active = True
-                return True
+                ser = serial.Serial(self.__port, BAUD)
+                ser.write(b'rrr') # For CANUSB: enter raw mode
+                return ser
             except:
                 print("Could not open serial port %s, retrying" % self.__port)
                 self.active = False
@@ -79,73 +87,93 @@ class CANDriver:
         """Stop execution"""
         self.__running = False
 
-    def read(self):
-        """Read packets from serial in (CANDriver.connect() must be run first)"""
-        packet     = []     # Store exact copy of packet (including delimiter)
-        datastream = []     # Store datastream read from serial port
-        
-        packet_mode = False    # Flag for beggining to store packet when delimiter received
-
-        current_char_index = 0 # Index of last char read from serialdata
-
-        print("Reading packets!")
-        print("self.__running", self.__running)
-    
-        while self.__running:
-            print("Looping")
-            datastream = self.__serial.read(RX_BUF_LEN)
-            
-            print("Read datastream")
-
-            # Read each serial data char
-            current_char_index = -1
-            for c in datastream:
-                current_char_index += 1
-
-                # Wait until full packet is received
-                if len(packet) < PKT_LEN:
-                    # Check if delimiter received
-                    delim = datastream[current_char_index-PKT_DELIM_LEN:current_char_index+1]
-                    print("Potential delim", delim.decode("utf-8"))
-                    if delim == PKT_DELIM:
-                        print("Received delim:", delim)
-                        # If we received new packet before previous finished - drop previous
-                        if len(packet) > 0:
-                            print("Dropped packet")
-                        # Enter packet mode
-                        packet = PKT_DELIM
-                        packet_mode = True
-                
-                    # If delimiter received, start capturing packet
-                    if packet_mode:
-                        print("In packet mode, capturing packet, current length:", len(packet))
-                        packet.append(c)
-                
-                # Recorded full packet, queue full packet
-                if len(packet) >= PKT_LEN:
-                    print("Packet received, I think")
-                    # TODO checksum stuff
-                    # Calculate ID
-                    pkt_id = 0
-                    for i in range(RX_ID_LSB_INDEX, RX_ID_MSB_INDEX+1):
-                        pkt_id = pkt_id | ord(packet[i]) << 8*(RX_ID_MSB_INDEX-i)
-
-                    # Calculate data
-                    data = []
-                    length = ord(packet[RX_LEN_INDEX])
-                    data_as_str = packet[RX_DATA_LSB_INDEX:RX_DATA_MSB_INDEX+1]
-                    for data_char in data_as_str:
-                        data.append(ord(data_char))
-
-                    # Queue to be written to sqlite DB
-                    self.__packets_to_write.put(Packet(pkt_id, data))
-
     def send(self):
         """Process queued packets and write to sqlite"""
         #self.__packets_to_write
 
     def log(self):
         pass
+
+class CANReadThread(threading.Thread):
+    """Read CAN packets from specified serial port"""
+    def __init__(self, ser):
+        super(CANReadThread, self).__init__()
+        self.__ser = ser # Serial port to read from (Serial obj)
+
+    def run(self):
+        packet     = []     # Store exact copy of packet (including delimiter)
+        datastream = []     # Store datastream read from serial port
+        
+        packet_mode = False    # Flag for beggining to store packet when delimiter received
+
+        print("Reading packets!")
+    
+        while True:
+            print("Looping")
+            datastream = self.__ser.read(RX_BUF_LEN)
+            
+            print("Read datastream")
+            # Read each serial data char
+            for charind, char in enumerate(datastream):
+
+                #print(chr(char), end="")
+
+                # Wait until full packet is received
+                if len(packet) < PKT_LEN:
+                    # Check if delimiter received
+                    delim = datastream[charind-PKT_DELIM_LEN+1:charind+1]
+                    print("Potential delim", delim)
+                    
+                    if delim == PKT_DELIM:
+                        print("Received delim:", delim)
+                        # If we received new packet before previous finished - drop previous
+                        if len(packet) > 0:
+                            print("Dropped packet")
+                        # Enter packet mode
+                        packet = list(PKT_DELIM) # Record delimiter at start of packet
+                        packet_mode = True
+                
+                    # If delimiter received, start capturing packet
+                    if packet_mode:
+                        print("In packet mode, capturing packet, current length:", len(packet))
+                        packet.append(char)
+                
+                # Recorded full packet, queue full packet
+                if len(packet) >= PKT_LEN:
+                    print("Packet received, I think")
+                    # TODO checksum stuff
+                    # Calculate ID
+                    pkt_id   = self.calc_packet_id(packet)
+                    pkt_data = self.calc_packet_data(packet)
+
+                    # Queue to be written to sqlite DB
+                    self.__packets_to_write.put(Packet(pkt_id, data))
+
+    @staticmethod
+    def calc_packet_id(packet):
+        pkt_id = 0
+        for i in range(RX_ID_LSB_INDEX, RX_ID_MSB_INDEX+1):
+            pkt_id = pkt_id | packet[i] << 8*(RX_ID_MSB_INDEX-i)
+        return pkt_id
+
+    @staticmethod
+    def calc_packet_data(packet):
+        data = []
+        length = packet[RX_LEN_INDEX]
+        data_as_str = packet[RX_DATA_LSB_INDEX:RX_DATA_MSB_INDEX+1]
+        for data_char in data_as_str:
+            data.append(data_char)
+        return data
+
+
+
+class CANWriteThread(threading.Thread):
+    def __init__(self):
+        super(CANWriteThread, self).__init__()
+
+    def run(self):
+        while True:
+            print("Writing")
 
 # For testing
 if __name__ == "__main__":
