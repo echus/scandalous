@@ -28,20 +28,22 @@ PORT_DEFAULT = "/dev/ttyUSB0"
 
 class Packet:
     """Object for storing CAN packet"""
-    def __init__(self, address, channel, time, data):
-        self.address = address
-        self.channel = channel
-        self.time = time
+    def __init__(self, id, data):
+        self.id   = id
         self.data = data
+
+    def __str__(self):
+        return ''.join(["ID: ", str(self.id), " Data: ", str(self.data)])
+    #def __init__(self, address, channel, time, data):
+    #    self.address = address
+    #    self.channel = channel
+    #    self.time = time
+    #    self.data = data
 
 class CANDriver:
     def __init__(self, port=PORT_DEFAULT):
         # Database for logging received packets
         self.__packets_db = None 
-        
-        # Queue for packets read from serial
-        self.__packets_to_write = Queue()
-        #self.__packets_to_send = Queue()
         
         # Serial setup
         self.__port = port      # Port name e.g.: /dev/ttyUSB0
@@ -69,6 +71,12 @@ class CANDriver:
         # Start reading packets
         self.__read_thread = CANReadThread(ser)
         self.__read_thread.start()
+
+        # TESTING - print all packets in queue while thread is running
+        while True:
+            pkt = self.__read_thread.packets.get()
+            print("Got packet", pkt)
+            self.__read_thread.packets.task_done()
 
     def connect(self):
         """Attempt to connect to Driver's specified serial port"""
@@ -98,7 +106,9 @@ class CANReadThread(threading.Thread):
     """Read CAN packets from specified serial port"""
     def __init__(self, ser):
         super(CANReadThread, self).__init__()
-        self.__ser = ser # Serial port to read from (Serial obj)
+        self.__ser   = ser     # Serial port to read from (Serial obj)
+        self.packets = Queue() # Queue for packets read from serial
+        self.stop    = False   # Stop flag
 
     def run(self):
         packet     = []     # Store exact copy of packet (including delimiter)
@@ -108,11 +118,11 @@ class CANReadThread(threading.Thread):
 
         print("Reading packets!")
     
-        while True:
-            print("Looping")
+        while not self.stop:
+            #print("Looping")
             datastream = self.__ser.read(RX_BUF_LEN)
             
-            print("Read datastream")
+            #print("Read datastream")
             # Read each serial data char
             for charind, char in enumerate(datastream):
 
@@ -122,10 +132,10 @@ class CANReadThread(threading.Thread):
                 if len(packet) < PKT_LEN:
                     # Check if delimiter received
                     delim = datastream[charind-PKT_DELIM_LEN+1:charind+1]
-                    print("Potential delim", delim)
+                    #print("Potential delim", delim)
                     
                     if delim == PKT_DELIM:
-                        print("Received delim:", delim)
+                        #print("Received delim:", delim)
                         # If we received new packet before previous finished - drop previous
                         if len(packet) > 0:
                             print("Dropped packet")
@@ -135,19 +145,25 @@ class CANReadThread(threading.Thread):
                 
                     # If delimiter received, start capturing packet
                     if packet_mode:
-                        print("In packet mode, capturing packet, current length:", len(packet))
+                        #print("In packet mode, capturing packet, current length:", len(packet))
                         packet.append(char)
                 
                 # Recorded full packet, queue full packet
                 if len(packet) >= PKT_LEN:
-                    print("Packet received, I think")
+                    #print("Packet received, I think")
                     # TODO checksum stuff
                     # Calculate ID
                     pkt_id   = self.calc_packet_id(packet)
                     pkt_data = self.calc_packet_data(packet)
 
-                    # Queue to be written to sqlite DB
-                    self.__packets_to_write.put(Packet(pkt_id, data))
+                    # Queue packet
+                    self.packets.put(Packet(pkt_id, pkt_data))
+                    
+                    # TESTING stop after 100 packets to check running
+                    qsize = self.packets.qsize()
+                    print("Packets queued", qsize)
+                    if qsize > 100:
+                        self.stop = True
 
     @staticmethod
     def calc_packet_id(packet):
