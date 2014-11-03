@@ -31,20 +31,17 @@ class Packet:
     def __init__(self, id, data):
         self.id   = id
         self.data = data
+        #self.time = time
+        #self.channel = channel
 
     def __str__(self):
         return ''.join(["ID: ", str(self.id), " Data: ", str(self.data)])
-    #def __init__(self, address, channel, time, data):
-    #    self.address = address
-    #    self.channel = channel
-    #    self.time = time
-    #    self.data = data
 
 class CANDriver:
     def __init__(self, port=PORT_DEFAULT):
         # Database for logging received packets
-        self.__packets_db = None 
-        
+        self.__packets_db = None
+
         # Serial setup
         self.__port = port      # Port name e.g.: /dev/ttyUSB0
         self.__serial = None    # Serial instance
@@ -63,11 +60,11 @@ class CANDriver:
 
     def run(self):
         print("CANDriver run() called")
-        
+
         # Connect to serial port
         ser = self.connect()
         print("Connected to serial port")
-        
+
         # Start reading packets
         self.__read_thread = CANReadThread(ser)
         self.__read_thread.start()
@@ -113,15 +110,15 @@ class CANReadThread(threading.Thread):
     def run(self):
         packet     = []     # Store exact copy of packet (including delimiter)
         datastream = []     # Store datastream read from serial port
-        
+
         packet_mode = False    # Flag for beggining to store packet when delimiter received
 
         print("Reading packets!")
-    
+
         while not self.stop:
             #print("Looping")
             datastream = self.__ser.read(RX_BUF_LEN)
-            
+
             #print("Read datastream")
             # Read each serial data char
             testing = 0
@@ -133,8 +130,8 @@ class CANReadThread(threading.Thread):
                 if len(packet) < PKT_LEN:
                     # Check if delimiter received
                     delim = datastream[charind-PKT_DELIM_LEN+1:charind+1]
-                    #print("Potential delim", delim)
-                    
+                    print("Potential delim", delim)
+
                     if delim == PKT_DELIM:
                         #print("Received delim:", delim)
                         # If we received new packet before previous finished - drop previous
@@ -143,12 +140,12 @@ class CANReadThread(threading.Thread):
                         # Enter packet mode
                         packet = list(PKT_DELIM) # Record delimiter at start of packet
                         packet_mode = True
-                
+
                     # If delimiter received, start capturing packet
                     if packet_mode:
                         #print("In packet mode, capturing packet, current length:", len(packet))
                         packet.append(char)
-                
+
                 # Recorded full packet, queue full packet
                 if len(packet) >= PKT_LEN:
                     #print("Packet received, I think")

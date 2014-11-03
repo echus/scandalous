@@ -3,3 +3,7 @@
 Scanalysis for WSC 2015.
 
 See UML [here](https://bitbucket.org/repo/doeRBx/images/3660329396-scanalysis_uml.png).
+
+For device addresses see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/addresses.h), for channels see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/devices.h).
+
+For more details see the Scandalous wiki on Confluence.
