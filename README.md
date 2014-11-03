@@ -1,7 +1,7 @@
-![scan_bg_80.png](https://bitbucket.org/repo/doeRBx/images/1974197745-scan_bg_80.png)
-
+#![scan_bg_80.png](https://bitbucket.org/repo/doeRBx/images/1974197745-scan_bg_80.png)
 ## Scanalysis for WSC 2015
-### Useful device addresses
+
+## Device addresses and channels quick reference
 | Address | Node |
 |---------|------|
 | 50, 51 | Current integrator |
@@ -18,7 +18,7 @@
 | OUT: 5  | Samples |
 | IN: 1   | Reset integration |
 
-### References
+## References
 * See UML [here](https://bitbucket.org/repo/doeRBx/images/3660329396-scanalysis_uml.png).
 * For a complete list of device addresses see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/addresses.h), for channels see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/devices.h).
 
