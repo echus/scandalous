@@ -1,9 +1,12 @@
 ![scan_bg_80.png](https://bitbucket.org/repo/doeRBx/images/1974197745-scan_bg_80.png)
 
-Scanalysis for WSC 2015.
+## Scanalysis for WSC 2015
+### Useful addresses
+| Address | Node |
+| 50, 51 | Current integrator |
 
-See UML [here](https://bitbucket.org/repo/doeRBx/images/3660329396-scanalysis_uml.png).
-
-For device addresses see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/addresses.h), for channels see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/devices.h).
+### References
+* See UML [here](https://bitbucket.org/repo/doeRBx/images/3660329396-scanalysis_uml.png).
+* For device addresses see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/addresses.h), for channels see [here](https://github.com/sunswift/scandal/blob/master/include/scandal/devices.h).
 
 For more details see the Scandalous wiki on Confluence.
