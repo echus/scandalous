@@ -123,12 +123,13 @@ class CANReadThread(threading.Thread):
             # Read each serial data char
             testing = 0
             for charind, char in enumerate(datastream):
+				
 
                 #print(chr(char), end="")
 
                 # Wait until full packet is received
                 if len(packet) < PKT_LEN:
-                    # Check if delimiter received
+                    # Check if delimiter receivedq
                     delim = datastream[charind-PKT_DELIM_LEN+1:charind+1]
                     print("Potential delim", delim)
 
@@ -144,6 +145,7 @@ class CANReadThread(threading.Thread):
                     # If delimiter received, start capturing packet
                     if packet_mode:
                         #print("In packet mode, capturing packet, current length:", len(packet))
+                        #print("Char is: ", char);
                         packet.append(char)
 
                 # Recorded full packet, queue full packet
@@ -154,6 +156,8 @@ class CANReadThread(threading.Thread):
                     pkt_id   = self.calc_packet_id(packet)
                     pkt_data = self.calc_packet_data(packet)
                     pkt = Packet(pkt_id, pkt_data)
+                    packet = []
+                    packet_mode = False;
 
                     print("Packet received", pkt)
 
