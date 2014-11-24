@@ -1,4 +1,4 @@
-#![scan_bg_80.png](https://bitbucket.org/repo/doeRBx/images/1974197745-scan_bg_80.png)
+#![scan_bg_80.png](http://i.imgur.com/dZxjEdI.png)
 ## Device addresses and channels quick reference
 | Address | Node |
 |---------|------|
