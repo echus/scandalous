@@ -7,4 +7,4 @@ from packets.models import Packet
 class PacketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Packet
-        fields = ('time', 'channel', 'node', 'data')
+        fields = ('pkt_id', 'time', 'node', 'channel', 'data')

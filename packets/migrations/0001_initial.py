@@ -13,13 +13,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Packet',
             fields=[
-                ('time', models.DateTimeField(serialize=False, auto_now_add=True, primary_key=True)),
+                ('pkt_id', models.AutoField(serialize=False, primary_key=True)),
+                ('time', models.DateTimeField(auto_now_add=True)),
                 ('channel', models.IntegerField(default=0)),
                 ('node', models.IntegerField(default=0)),
                 ('data', models.IntegerField(default=0)),
             ],
             options={
-                'ordering': ('-time',),
+                'ordering': ('-pkt_id',),
             },
             bases=(models.Model,),
         ),
