@@ -7,6 +7,8 @@ from django.db import models
 
 class Packet(models.Model):
     pkt_id = models.AutoField(primary_key=True)
+    priority = models.IntegerField(default=0)
+    MSG_type = models.IntegerField(default=0)
     time = models.DateTimeField(auto_now_add=True, blank=True)
     channel = models.IntegerField(default=0)
     node = models.IntegerField(default=0)
