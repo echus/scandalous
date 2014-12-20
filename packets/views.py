@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from packets.models import Packet
 from packets.serializers import PacketSerializer
+from packets import can
 import datetime
 import time
 import re
@@ -123,6 +124,19 @@ class AnalyseQuery(APIView):
         packetlist = Packet.objects.all()
         serializer = PacketSerializer(packetlist, many=True)
         return serializer
+
+
+class StartDriver(APIView):
+    def get(self, request):
+        driver = can.CANDriver()
+        dr_status = driver.run()
+        if dr_status:
+            return Response("CAN Driver has started successfully")
+        else:
+            return Response("Error starting CAN Driver (see console for details)")
+
+
+
 
 
 
