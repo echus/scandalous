@@ -42,20 +42,10 @@ class AnalyseQuery(APIView):
         toffset = request.GET.get('toffset')
 
         if tlimit is not None:
-            if re.match(r'h', tlimit) is not None:
-                tlimit_dt = datetime.timedelta.strptime(tlimit, '%Hh%Mm%Ss')
-            elif re.match(r'm', tlimit) is not None:
-                tlimit_dt = datetime.timedelta.strptime(tlimit, '%Mm%Ss')
-            else:
-                tlimit_dt = datetime.timedelta.strptime(tlimit, '%Ss')
+            tlimit_dt = self.parse_time_delta(tlimit)
 
         if toffset is not None:
-            if re.match(r'h', toffset) is not None:
-                toffset_dt = datetime.timedelta.strptime(toffset, '%Hh%Mm%Ss')
-            elif re.match(r'm', toffset) is not None:
-                toffset_dt = datetime.timedelta.strptime(toffset, '%Mm%Ss')
-            else:
-                toffset_dt = datetime.timedelta.strptime(toffset, '%Ss')
+            toffset_dt = self.parse_time_delta(toffset)
 
         if (tlimit and toffset) is not None:
             return Response(self.filter_time_limit_offset(tlimit_dt, toffset_dt).data)
@@ -80,19 +70,19 @@ class AnalyseQuery(APIView):
 
     # Return latest 'x' packets
     def filter_latest(self, num_packets):
-        packetlist = Packet.objects.order_by('-time')[:num_packets]
+        packetlist = Packet.objects.order_by('-pkt_id')[:num_packets]
         serializer = PacketSerializer(packetlist, many=True)
         return serializer
 
     # Return all packets up until specified offset. i.e. If offset = 100, return packets 1->100
     def filter_offset(self, num_offset):
-        packetlist = Packet.objects.order_by('-time')[num_offset:]
+        packetlist = reversed(Packet.objects.order_by('pkt_id')[:num_offset])
         serializer = PacketSerializer(packetlist, many=True)
         return serializer
 
     # Return "limit" packets starting from "offset" packet. i.e. If limit = 10, offset = 100, return packets 90->100
     def filter_limit_offset(self, num_limit, num_offset):
-        packetlist = Packet.objects.order_by('-time')[num_offset:num_offset+num_limit]
+        packetlist = reversed(Packet.objects.order_by('pkt_id')[num_offset-num_limit:num_offset])
         serializer = PacketSerializer(packetlist, many=True)
         return serializer
 
@@ -124,6 +114,14 @@ class AnalyseQuery(APIView):
         packetlist = Packet.objects.all()
         serializer = PacketSerializer(packetlist, many=True)
         return serializer
+
+    def parse_time_delta(self, s):
+        if s is None:
+            return None
+        d = re.match(r'(?:(?P<hours>\d+)h){0,1}(?:(?P<minutes>\d+)m){0,1}(?:(?P<seconds>\d+)s){0,1}', str(s)).groupdict(0)
+
+        return datetime.timedelta(**dict(((key, int(value))
+                                  for key, value in d.items() )))
 
 
 class StartDriver(APIView):

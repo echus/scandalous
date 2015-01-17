@@ -33,28 +33,8 @@ RX_CHKSUM_INDEX   = 17
 
 PORT_DEFAULT = "/dev/ttyUSB0"
 
- # class Packet:
- #    """Object for storing CAN packet"""
- #   def __init__(self, id, priority, msg_type, time, node, channel, data):
- #       self.id   = id
- #       self.priority = priority
- #       self.msg_type = msg_type
- #       self.time = time
- #       self.node = node
- #       self.channel = channel
- #       self.data = data
- #
-#  def __str__(self):
- #       return ''.join(["ID: ", str(self.id), "\nPRIORITY: ", str(self.priority), "\nMESSAGE TYPE: ", str(self.msg_type),
-  #                      "\nTIME: ", str(self.time), "\nNODE: ", str(self.node), "\nCHANNEL: ",
-   #                     str(self.channel), "\nData: ", str(self.data), "\n\n"])
-
-
 class CANDriver:
     def __init__(self, port=PORT_DEFAULT):
-        # Database for logging received packets
-        self.__packets_db = None
-
         # Serial setup
         self.__port = port      # Port name e.g.: /dev/ttyUSB0
         self.__serial = None    # Serial instance
@@ -72,9 +52,6 @@ class CANDriver:
         #self.__send_thread = None
         self.__write_thread = None
 
-
-        # Start driver
-        #self.run()
 
     def run(self):
         errors = []
