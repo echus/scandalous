@@ -64,10 +64,12 @@ class CANDriver:
 
             # Start reading packets
             self.__read_thread = CANReadThread(ser, self.packets)
+            self.__read_thread.daemon = True
             self.__read_thread.start()
 
             # Start writing packets
             self.__write_thread = CANWriteThread(self.packets)
+            self.__write_thread.daemon = True
             self.__write_thread.start()
         return ser
 

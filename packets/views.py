@@ -8,7 +8,6 @@ from packets.models import Packet
 from packets.serializers import PacketSerializer
 from packets import can
 import datetime
-import time
 import re
 
 
@@ -61,44 +60,44 @@ class AnalyseQuery(APIView):
 
     # Filter all packets by node only
     def filter_node(self, url_node, currQS):
-        packetlist = currQS.objects.filter(node=url_node)
+        packetlist = currQS.filter(node=url_node)
         return packetlist
 
     # Filter all packets by node and channel
     def filter_node_channel(self, url_node, url_channel, currQS):
-        packetlist = currQS.objects.filter(node=url_node, channel=url_channel)
+        packetlist = currQS.filter(node=url_node, channel=url_channel)
         return packetlist
 
     # Return latest 'x' packets
     def filter_latest(self, num_packets, currQS):
-        packetlist = currQS.objects.order_by('-pkt_id')[:num_packets]
+        packetlist = currQS.order_by('-pkt_id')[:num_packets]
         return packetlist
 
     # Return all packets up until specified offset. i.e. If offset = 100, return packets 1->100
     def filter_offset(self, num_offset, currQS):
-        packetlist = reversed(currQS.objects.order_by('pkt_id')[:num_offset])
+        packetlist = reversed(currQS.order_by('pkt_id')[:num_offset])
         return packetlist
 
     # Return "limit" packets starting from "offset" packet. i.e. If limit = 10, offset = 100, return packets 90->100
     def filter_limit_offset(self, num_limit, num_offset, currQS):
-        packetlist = reversed(currQS.objects.order_by('pkt_id')[num_offset-num_limit:num_offset])
+        packetlist = reversed(currQS.order_by('pkt_id')[num_offset-num_limit:num_offset])
         return packetlist
 
     # Return all packets made after specified time delta
     def filter_time_limit(self, limit_dt, currQS):
-        packetlist = currQS.objects.filter(
+        packetlist = currQS.filter(
             time__gte=datetime.datetime.now()-limit_dt)
         return packetlist
 
     # Return all packets made before specified time delta
     def filter_time_offset(self, offset_dt, currQS):
-        packetlist = currQS.objects.filter(
+        packetlist = currQS.filter(
             time__lte=datetime.datetime.now()-offset_dt)
         return packetlist
 
     # Return packets made in time limit specified by tlimit_dt and offset_dt
     def filter_time_limit_offset(self, limit_dt, offset_dt, currQS):
-        packetlist = currQS.objects.filter(
+        packetlist = currQS.filter(
             time__gte=datetime.datetime.now() - (limit_dt + offset_dt),
             time__lte=datetime.datetime.now() -
             offset_dt)
@@ -125,7 +124,7 @@ class StartDriver(APIView):
         if dr_status:
             return Response("CAN Driver has started successfully")
         else:
-            return Response("Error starting CAN Driver (see console for details)")
+            return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 
