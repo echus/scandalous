@@ -22,21 +22,23 @@ class AnalyseQuery(APIView):
         node = request.GET.get('node')
         ch = request.GET.get('ch')
 
+        currQS = self.list_all()
+
         # Decision statements used to direct URL request to appropriate function
         if (node and ch) is not None:
-            return Response(self.filter_node_channel(int(node), int(ch)).data)
+            currQS = self.filter_node_channel(int(node), int(ch), currQS)
         elif node is not None:
-            return Response(self.filter_node(int(node)).data)
+            currQS = self.filter_node(int(node), currQS)
 
         limit = request.GET.get('limit')
         offset = request.GET.get('offset')
 
         if (limit and offset) is not None:
-            return Response(self.filter_limit_offset(int(limit), int(offset)).data)
+            currQS = self.filter_limit_offset(int(limit), int(offset), currQS)
         elif limit is not None:
-            return Response(self.filter_latest(int(limit)).data)
+            currQS = self.filter_latest(int(limit), currQS)
         elif offset is not None:
-            return Response(self.filter_offset(int(offset)).data)
+            currQS = self.filter_offset(int(offset), currQS)
 
         tlimit = request.GET.get('tlimit')
         toffset = request.GET.get('toffset')
@@ -48,72 +50,64 @@ class AnalyseQuery(APIView):
             toffset_dt = self.parse_time_delta(toffset)
 
         if (tlimit and toffset) is not None:
-            return Response(self.filter_time_limit_offset(tlimit_dt, toffset_dt).data)
+            currQS = self.filter_time_limit_offset(tlimit_dt, toffset_dt)
         elif tlimit is not None:
-            return Response(self.filter_time_limit(tlimit_dt).data)
+            currQS = self.filter_time_limit(tlimit_dt, currQS)
         elif toffset is not None:
-            return Response(self.filter_time_offset(toffset_dt).data)
+            currQS = self.filter_time_offset(toffset_dt, currQS)
 
-        return Response(self.list_all().data)
+        serializer = PacketSerializer(currQS, many=True)
+        return Response(serializer.data)
 
     # Filter all packets by node only
-    def filter_node(self, url_node):
-        packetlist = Packet.objects.filter(node=url_node)
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+    def filter_node(self, url_node, currQS):
+        packetlist = currQS.objects.filter(node=url_node)
+        return packetlist
 
     # Filter all packets by node and channel
-    def filter_node_channel(self, url_node, url_channel):
-        packetlist = Packet.objects.filter(node=url_node, channel=url_channel)
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+    def filter_node_channel(self, url_node, url_channel, currQS):
+        packetlist = currQS.objects.filter(node=url_node, channel=url_channel)
+        return packetlist
 
     # Return latest 'x' packets
-    def filter_latest(self, num_packets):
-        packetlist = Packet.objects.order_by('-pkt_id')[:num_packets]
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+    def filter_latest(self, num_packets, currQS):
+        packetlist = currQS.objects.order_by('-pkt_id')[:num_packets]
+        return packetlist
 
     # Return all packets up until specified offset. i.e. If offset = 100, return packets 1->100
-    def filter_offset(self, num_offset):
-        packetlist = reversed(Packet.objects.order_by('pkt_id')[:num_offset])
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+    def filter_offset(self, num_offset, currQS):
+        packetlist = reversed(currQS.objects.order_by('pkt_id')[:num_offset])
+        return packetlist
 
     # Return "limit" packets starting from "offset" packet. i.e. If limit = 10, offset = 100, return packets 90->100
-    def filter_limit_offset(self, num_limit, num_offset):
-        packetlist = reversed(Packet.objects.order_by('pkt_id')[num_offset-num_limit:num_offset])
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+    def filter_limit_offset(self, num_limit, num_offset, currQS):
+        packetlist = reversed(currQS.objects.order_by('pkt_id')[num_offset-num_limit:num_offset])
+        return packetlist
 
     # Return all packets made after specified time delta
-    def filter_time_limit(self, limit_dt):
-        packetlist = Packet.objects.filter(
+    def filter_time_limit(self, limit_dt, currQS):
+        packetlist = currQS.objects.filter(
             time__gte=datetime.datetime.now()-limit_dt)
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+        return packetlist
 
     # Return all packets made before specified time delta
-    def filter_time_offset(self, offset_dt):
-        packetlist = Packet.objects.filter(
+    def filter_time_offset(self, offset_dt, currQS):
+        packetlist = currQS.objects.filter(
             time__lte=datetime.datetime.now()-offset_dt)
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+        return packetlist
 
     # Return packets made in time limit specified by tlimit_dt and offset_dt
-    def filter_time_limit_offset(self, limit_dt, offset_dt):
-        packetlist = Packet.objects.filter(
+    def filter_time_limit_offset(self, limit_dt, offset_dt, currQS):
+        packetlist = currQS.objects.filter(
             time__gte=datetime.datetime.now() - (limit_dt + offset_dt),
             time__lte=datetime.datetime.now() -
             offset_dt)
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+        return packetlist
 
     # Return all packets
     def list_all(self):
         packetlist = Packet.objects.all()
-        serializer = PacketSerializer(packetlist, many=True)
-        return serializer
+        return packetlist
 
     def parse_time_delta(self, s):
         if s is None:
