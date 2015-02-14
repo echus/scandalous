@@ -93,9 +93,9 @@ class CANDriver:
         self.__read_thread.pause()
         self.__write_thread.pause()
 
-    def send(self):
-        """Process queued packets and write to sqlite"""
-        #self.__packets_to_write
+    def send(self, node, channel, data, timestamp, msg_type):
+
+
 
     def log(self):
         pass
@@ -113,7 +113,7 @@ class CANReadThread(threading.Thread):
         packet     = []     # Store exact copy of packet (including delimiter)
         datastream = []     # Store datastream read from serial port
 
-        packet_mode = False    # Flag for beggining to store packet when delimiter received
+        packet_mode = False    # Flag for beginning to store packet when delimiter received
 
         print("Reading packets!")
 

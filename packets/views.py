@@ -7,6 +7,7 @@ from rest_framework.renderers import JSONRenderer
 from packets.models import Packet
 from packets.serializers import PacketSerializer
 from packets import can
+import django.utils.simplejson as json
 import datetime
 import re
 
@@ -57,6 +58,7 @@ class AnalyseQuery(APIView):
 
         serializer = PacketSerializer(currQS, many=True)
         return Response(serializer.data)
+
 
     # Filter all packets by node only
     def filter_node(self, url_node, currQS):
@@ -117,14 +119,30 @@ class AnalyseQuery(APIView):
                                   for key, value in d.items() )))
 
 
-class StartDriver(APIView):
-    def get(self, request):
-        driver = can.CANDriver()
-        dr_status = driver.run()
+class Driver(APIView):
+    def __init__(self):
+        self.driver = can.CANDriver()
+
+    def get(self):
+        dr_status = self.driver.run()
         if dr_status:
             return Response("CAN Driver has started successfully")
         else:
             return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    def post(self, request):
+        packet = json.loads(request.body)
+        node = packet['node']
+        channel = packet['channel']
+        data = packet['data']
+        if all([node, channel, data]):
+            self.driver.send(node, channel, data)
+            return Response("Packet sent")
+        else:
+            return Response("Bad Data", status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
 
 
