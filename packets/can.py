@@ -61,6 +61,7 @@ class CANDriver:
         if ser:
             print("Connected to serial port")
             self.__serial = ser
+            self.__running = True
 
             # Start reading packets
             self.__read_thread = CANReadThread(ser, self.packets)
@@ -94,19 +95,22 @@ class CANDriver:
         self.__write_thread.pause()
 
     def send(self, node, channel, msg_type, data, timestamp):
-        #Calculate ID from relevant parameters
+        if self.__running is not True:
+            return None
+
+        # Calculate ID from relevant parameters
         id = (channel & 0x3FF) | \
                  ((node & 0xFF) << 10) | \
                  ((msg_type & 0xFF) << 18) | \
                  (0x3F << 26)
 
-        #Store ID as list of bytes
+        # Store ID as list of bytes
         pkt_id = [(id >> 24) & 0xFF,
                   (id >> 16) & 0xFF,
                   (id >> 8) & 0xFF,
                   (id >> 0) & 0xFF]
 
-        #Store data as list of bytes
+        # Store data as list of bytes
         pkt_data = [(data >> 24) & 0xFF,
                     (data >> 16) & 0xFF,
                     (data >> 8) & 0xFF,
@@ -116,9 +120,9 @@ class CANDriver:
                     (timestamp >> 8) & 0xFF,
                     (timestamp >> 0) & 0xFF]
 
-        #VOODOO
+        # VOODOO
         bytes = pkt_id + pkt_data
-        bytes += list(range(0, (8-len(data)))) + [len(data)]
+        bytes += list(range(0, (8-len(pkt_data)))) + [len(pkt_data)]
 
         checksum = 0
         for byte in bytes:
@@ -140,8 +144,9 @@ class CANDriver:
 
         send_pkt += "r"
 
-        #END VOODOO, send pkt through serial connection
+        # END VOODOO, send pkt through serial connection
         self.__serial.write(send_pkt)
+        return 1
 
 
     def log(self):

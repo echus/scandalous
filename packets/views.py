@@ -10,6 +10,7 @@ from packets import can
 import json
 import datetime
 import re
+import time
 
 
 # All url /packet? queries processed here
@@ -131,13 +132,18 @@ class Driver(APIView):
             return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     def post(self, request):
-        packet = json.loads(request.body)
+        packet = json.loads(request.body.decode('utf-8'))
         node = packet['node']
         channel = packet['channel']
         data = packet['data']
-        if all([node, channel, data]):
-            self.driver.send(node, channel, data)
-            return Response("Packet sent")
+        msg_type = packet['msg_type']
+        timestamp = int(time.time() * 1000)
+        if all([node, channel, msg_type, data, timestamp]):
+            pkt_status = self.driver.send(node, channel, msg_type, data, timestamp)
+            if pkt_status is not None:
+                return Response("Packet sent")
+            else:
+                return Response("Failed to send packet")
         else:
             return Response("Bad Data", status=status.HTTP_400_BAD_REQUEST)
 
