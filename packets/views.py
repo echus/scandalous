@@ -7,7 +7,7 @@ from rest_framework.renderers import JSONRenderer
 from packets.models import Packet
 from packets.serializers import PacketSerializer
 from packets import can
-import django.utils.simplejson as json
+import json
 import datetime
 import re
 
@@ -123,7 +123,7 @@ class Driver(APIView):
     def __init__(self):
         self.driver = can.CANDriver()
 
-    def get(self):
+    def get(self, request):
         dr_status = self.driver.run()
         if dr_status:
             return Response("CAN Driver has started successfully")

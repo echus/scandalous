@@ -8,9 +8,9 @@ import serial
 import logging
 import time
 import datetime
+import struct
 from packets.scandal_constants import ScandalConstants as SC
 from queue import Queue
-from json import dumps
 from packets.models import Packet
 
 
@@ -54,13 +54,13 @@ class CANDriver:
 
 
     def run(self):
-        errors = []
         print("CANDriver run() called")
 
         # Connect to serial port
         ser = self.connect()
         if ser:
             print("Connected to serial port")
+            self.__serial = ser
 
             # Start reading packets
             self.__read_thread = CANReadThread(ser, self.packets)
@@ -93,8 +93,55 @@ class CANDriver:
         self.__read_thread.pause()
         self.__write_thread.pause()
 
-    def send(self, node, channel, data, timestamp, msg_type):
+    def send(self, node, channel, msg_type, data, timestamp):
+        #Calculate ID from relevant parameters
+        id = (channel & 0x3FF) | \
+                 ((node & 0xFF) << 10) | \
+                 ((msg_type & 0xFF) << 18) | \
+                 (0x3F << 26)
 
+        #Store ID as list of bytes
+        pkt_id = [(id >> 24) & 0xFF,
+                  (id >> 16) & 0xFF,
+                  (id >> 8) & 0xFF,
+                  (id >> 0) & 0xFF]
+
+        #Store data as list of bytes
+        pkt_data = [(data >> 24) & 0xFF,
+                    (data >> 16) & 0xFF,
+                    (data >> 8) & 0xFF,
+                    (data >> 0) & 0xFF,
+                    (timestamp >> 24) & 0xFF,
+                    (timestamp >> 16) & 0xFF,
+                    (timestamp >> 8) & 0xFF,
+                    (timestamp >> 0) & 0xFF]
+
+        #VOODOO
+        bytes = pkt_id + pkt_data
+        bytes += list(range(0, (8-len(data)))) + [len(data)]
+
+        checksum = 0
+        for byte in bytes:
+            checksum += byte
+            if checksum > 255:
+                checksum -= 256
+
+        bytes += [checksum]
+
+        send_pkt = struct.pack("B", ord("C"))
+
+        for byte in bytes:
+            if byte == ord('q') or \
+                    byte == ord('r') or \
+                    byte == ord('C') or \
+                    byte == ord('\\'):
+                send_pkt += "\\"
+            send_pkt += struct.pack("B", byte)
+
+        send_pkt += "r"
+
+        #END VOODOO, send pkt through serial connection
+        self.__serial.write(send_pkt)
 
 
     def log(self):
