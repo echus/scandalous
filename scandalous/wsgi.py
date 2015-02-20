@@ -7,6 +7,14 @@ For more information on this file, see
 https://docs.djangoproject.com/en/1.7/howto/deployment/wsgi/
 """
 
+### Patch for pymysql usage
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+### End patch
+
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scandalous.settings")
 
