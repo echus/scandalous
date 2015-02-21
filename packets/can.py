@@ -310,5 +310,5 @@ class CANWriteThread(threading.Thread):
             pkt = self.packets.get()
             pkt.save()
 
-    def pause(self):
+    def stop(self):
         self.stopped.set()
