@@ -171,6 +171,7 @@ class Driver(APIView):
     def backup():
         output_filename = datetime.datetime.now().strftime("%I:%M%p - %B %d %Y") + '.json'
         output = open(os.path.join("./packets/backups", output_filename), 'w+')
+        output = os.path.abspath(output)
         call_command('dumpdata', 'packets', format='json', indent=4, stdout=output)
         output.close()
 
