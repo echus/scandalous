@@ -13,7 +13,7 @@ import json
 import datetime
 import re
 import time
-
+import scandalous
 
 # All url /packet? queries processed here
 class AnalyseQuery(APIView):
@@ -131,7 +131,7 @@ class Driver(APIView):
 
         if self.switch is 0:
             dr_status = self.driver.run()
-            if dr_status:
+            if dr_status is not None:
                 return Response("CAN Driver has started successfully")
             else:
                 return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -170,8 +170,9 @@ class Driver(APIView):
     @staticmethod
     def backup():
         output_filename = datetime.datetime.now().strftime("%I:%M%p - %B %d %Y") + '.json'
-        output_path = (os.path.join("./packets/backups", output_filename))
-        output = open(os.path.abspath(output_path), 'w+')
+        project_root = os.path.dirname(scandalous.__file__)
+        output_path = os.path.join(project_root, output_filename)
+        output = open(output_path, 'w+')
         call_command('dumpdata', 'packets', format='json', indent=4, stdout=output)
         output.close()
 

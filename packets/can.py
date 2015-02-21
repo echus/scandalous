@@ -1,7 +1,5 @@
 __author__ = "varvara"
 
-#from .packet import Packet
-
 import sys
 import threading
 import serial
@@ -232,7 +230,7 @@ class CANReadThread(threading.Thread):
 
                     # Queue packet
                     self.packets.put(pkt)
-                    print("Packets received: ", self.pkt_count)
+                    # print("Packets received: ", self.pkt_count)
 
     def stop(self):
         self.stopped.set()
