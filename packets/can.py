@@ -90,9 +90,12 @@ class CANDriver:
 
     def stop(self):
         """Stop execution"""
+        if self.__running is False:
+            return 0
         self.__running = False
-        self.__read_thread.pause()
-        self.__write_thread.pause()
+        self.__read_thread.stop()
+        self.__write_thread.stop()
+        return 1
 
     def send(self, node, channel, msg_type, data, timestamp):
         if self.__running is not True:
@@ -158,7 +161,7 @@ class CANReadThread(threading.Thread):
         super(CANReadThread, self).__init__()
         self.__ser   = ser      # Serial port to read from (Serial obj)
         self.packets = packets  # Queue for packets read from serial
-        self.pause    = False    # Stop flag
+        self.stopped = threading.Event()    # Stop flag
         self.pkt_count = 0      # Number of packets received
 
     def run(self):
@@ -169,7 +172,7 @@ class CANReadThread(threading.Thread):
 
         print("Reading packets!")
 
-        while not self.pause:
+        while not self.stopped.isSet():
             #print("Looping")
             datastream = self.__ser.read(RX_BUF_LEN)
 
@@ -231,9 +234,8 @@ class CANReadThread(threading.Thread):
                     self.packets.put(pkt)
                     print("Packets received: ", self.pkt_count)
 
-    def pause(self):
-        self.pause = True
-
+    def stop(self):
+        self.stopped.set()
 
     @staticmethod
     def calc_packet_id(packet):
@@ -294,11 +296,11 @@ class CANReadThread(threading.Thread):
 class CANWriteThread(threading.Thread):
     def __init__(self, packets):
         super(CANWriteThread, self).__init__()
-        self.pause = False
+        self.stopped = threading.Event()
         self.packets = packets
 
     def run(self):
-        while not self.pause:
+        while not self.stopped.isSet():
             while True:
                 if self.packets.qsize() < 100:
                     pass
@@ -309,4 +311,4 @@ class CANWriteThread(threading.Thread):
             pkt.save()
 
     def pause(self):
-        self.pause = True
+        self.stopped.set()

@@ -1,5 +1,6 @@
 __author__ = 'Anmol'
 
+from django.core.management import call_command
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,6 +8,7 @@ from rest_framework.renderers import JSONRenderer
 from packets.models import Packet
 from packets.serializers import PacketSerializer
 from packets import can
+import os
 import json
 import datetime
 import re
@@ -121,15 +123,33 @@ class AnalyseQuery(APIView):
 
 
 class Driver(APIView):
-    def __init__(self):
-        self.driver = can.CANDriver()
+    switch = None
+    driver = can.CANDriver()
 
     def get(self, request):
-        dr_status = self.driver.run()
-        if dr_status:
-            return Response("CAN Driver has started successfully")
+        print(self.switch)
+
+        if self.switch is 0:
+            dr_status = self.driver.run()
+            if dr_status:
+                return Response("CAN Driver has started successfully")
+            else:
+                return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        elif self.switch is 1:
+            run_status = self.driver.stop()
+            if run_status is 1:
+                self.backup()
+                return Response("CAN Driver has stopped successfully, packet table backed up")
+            elif run_status is 0:
+                return Response("CAN Driver was not running")
+
+        elif self.switch is 2:
+            self.backup()
+            return Response("Packet table backed up")
+
         else:
-            return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response("Something went wrong")
 
     def post(self, request):
         packet = json.loads(request.body.decode('utf-8'))
@@ -146,6 +166,13 @@ class Driver(APIView):
                 return Response("Failed to send packet")
         else:
             return Response("Bad Data", status=status.HTTP_400_BAD_REQUEST)
+
+    @staticmethod
+    def backup():
+        output_filename = datetime.datetime.now().strftime("%I:%M%p - %B %d %Y") + '.json'
+        output = open(os.path.join("./packets/backups", output_filename), 'w+')
+        call_command('dumpdata', 'packets', format='json', indent=4, stdout=output)
+        output.close()
 
 
 
