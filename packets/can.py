@@ -47,7 +47,6 @@ class CANDriver:
 
         # Threads
         self.__read_thread = None
-        #self.__send_thread = None
         self.__write_thread = None
 
 
@@ -56,7 +55,7 @@ class CANDriver:
 
         # Connect to serial port
         ser = self.connect()
-        if ser:
+        if ser is not None:
             print("Connected to serial port")
             self.__serial = ser
             self.__running = True
@@ -85,11 +84,8 @@ class CANDriver:
             time.sleep(1)
             return 0
 
-
     def stop(self):
         """Stop execution"""
-        if self.__running is False:
-            return 0
         self.__running = False
         self.__read_thread.stop()
         self.__write_thread.stop()
@@ -230,7 +226,7 @@ class CANReadThread(threading.Thread):
 
                     # Queue packet
                     self.packets.put(pkt)
-                    # print("Packets received: ", self.pkt_count)
+                    print("Packets received: ", self.pkt_count)
 
     def stop(self):
         self.stopped.set()
@@ -299,14 +295,15 @@ class CANWriteThread(threading.Thread):
 
     def run(self):
         while not self.stopped.isSet():
-            while True:
-                if self.packets.qsize() < 100:
-                    pass
-                else:
-                    break
+            #while True:
+            #if self.packets.qsize() < 100:
+            #     pass
+            # else:
+            #     break
             # print("Writing")
             pkt = self.packets.get()
             pkt.save()
+            print("Packet Saved!")
 
     def stop(self):
         self.stopped.set()

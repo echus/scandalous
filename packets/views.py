@@ -123,11 +123,11 @@ class AnalyseQuery(APIView):
 
 
 class Driver(APIView):
-    switch = None
     driver = can.CANDriver()
+    switch = None
 
     def get(self, request):
-        print(self.switch)
+        print(self.driver)
 
         if self.switch is 0:
             dr_status = self.driver.run()
