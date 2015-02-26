@@ -8,6 +8,7 @@ https://docs.djangoproject.com/en/1.7/howto/deployment/wsgi/
 """
 
 ### Patch for pymysql usage
+#!/usr/bin/env python
 try:
     import pymysql
     pymysql.install_as_MySQLdb()

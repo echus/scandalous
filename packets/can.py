@@ -11,6 +11,7 @@ from packets.scandal_constants import ScandalConstants as SC
 from queue import Queue
 from packets.models import Packet
 
+logger = logging.getLogger("scandalous.debug")
 
 BAUD = 115200
 RX_BUF_LEN = 216
@@ -57,6 +58,7 @@ class CANDriver:
         ser = self.connect()
         if ser is not None:
             print("Connected to serial port")
+            logger.debug("Connected to serial port, %s", ser)
             self.__serial = ser
             self.__running = True
 
@@ -80,9 +82,10 @@ class CANDriver:
             return ser
         except:
             print("Could not open serial port ", self.__port)
+            logger.debug("Could not open serial port %s", self.__port)
             self.active = False
             time.sleep(1)
-            return 0
+            return None
 
     def stop(self):
         """Stop execution"""
@@ -156,7 +159,8 @@ class CANReadThread(threading.Thread):
         self.__ser   = ser      # Serial port to read from (Serial obj)
         self.packets = packets  # Queue for packets read from serial
         self.stopped = threading.Event()    # Stop flag
-        self.pkt_count = 0      # Number of packets received
+        self.pkt_count = Packet.objects.all().count()      # Number of packets received
+        logger.debug("Have %i packets already", self.pkt_count)
 
     def run(self):
         packet     = []     # Store exact copy of packet (including delimiter)
@@ -165,12 +169,15 @@ class CANReadThread(threading.Thread):
         packet_mode = False    # Flag for beginning to store packet when delimiter received
 
         print("Reading packets!")
+        logger.debug("Reading packets!")
 
         while not self.stopped.isSet():
             #print("Looping")
+            #logger.debug("looping!")
             datastream = self.__ser.read(RX_BUF_LEN)
 
             #print("Read datastream")
+            #logger.debug("Got datastream")
             # Read each serial data char
             testing = 0
             for charind, char in enumerate(datastream):
@@ -226,7 +233,8 @@ class CANReadThread(threading.Thread):
 
                     # Queue packet
                     self.packets.put(pkt)
-                    print("Packets received: ", self.pkt_count)
+                    #print("Packets received: ", self.pkt_count)
+                    #logger.debug("Packets received ", self.pkt_count)
 
     def stop(self):
         self.stopped.set()
@@ -304,6 +312,7 @@ class CANWriteThread(threading.Thread):
             pkt = self.packets.get()
             pkt.save()
             print("Packet Saved!")
+            #logger.debug("Packet Saved!")
 
     def stop(self):
         self.stopped.set()
