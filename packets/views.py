@@ -14,6 +14,9 @@ import datetime
 import re
 import time
 import scandalous
+import logging
+
+logger = logging.getLogger("scandalous.debug")
 
 # All url /packet? queries processed here
 class AnalyseQuery(APIView):
@@ -127,7 +130,7 @@ class Driver(APIView):
     switch = None
 
     def get(self, request):
-        print(self.driver)
+        logging.debug(self.driver)
 
         if self.switch is 0:
             dr_status = self.driver.run()
@@ -138,6 +141,7 @@ class Driver(APIView):
 
         elif self.switch is 1:
             run_status = self.driver.stop()
+
             if run_status is 1:
                 self.backup()
                 return Response("CAN Driver has stopped successfully, packet table backed up")

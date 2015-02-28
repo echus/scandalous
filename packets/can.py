@@ -1,4 +1,4 @@
-__author__ = "varvara"
+views__author__ = "varvara"
 
 import sys
 import threading
@@ -89,6 +89,8 @@ class CANDriver:
 
     def stop(self):
         """Stop execution"""
+        if self.__running is False:
+            return 0
         self.__running = False
         self.__read_thread.stop()
         self.__write_thread.stop()
