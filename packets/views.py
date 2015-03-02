@@ -22,6 +22,7 @@ logger = logging.getLogger("scandalous.debug")
 class AnalyseQuery(APIView):
     # Sets Response to prioritise rendering in JSON format
     renderer_classes = [JSONRenderer]
+    reverse_flag = False
 
     def get(self, request):
         # This call pulls any query parameters of the specified string in URL path
@@ -62,6 +63,17 @@ class AnalyseQuery(APIView):
         elif toffset is not None:
             currQS = self.filter_time_offset(toffset_dt, currQS)
 
+        dsf = request.GET.get('dsf')
+
+        if dsf is not None:
+            if int(dsf) > 0:
+                currQS = self.downsample(int(dsf), currQS)
+            else:
+                return Response("Downsampling factor invalid")
+
+        if self.reverse_flag is True:
+            currQS = reversed(currQS)
+
         serializer = PacketSerializer(currQS, many=True)
         return Response(serializer.data)
 
@@ -83,12 +95,14 @@ class AnalyseQuery(APIView):
 
     # Return all packets up until specified offset. i.e. If offset = 100, return packets 1->100
     def filter_offset(self, num_offset, currQS):
-        packetlist = reversed(currQS.order_by('pkt_id')[:num_offset])
+        self.reverse_flag = True
+        packetlist = currQS.order_by('pkt_id')[:num_offset]
         return packetlist
 
     # Return "limit" packets starting from "offset" packet. i.e. If limit = 10, offset = 100, return packets 90->100
     def filter_limit_offset(self, num_limit, num_offset, currQS):
-        packetlist = reversed(currQS.order_by('pkt_id')[num_offset-num_limit:num_offset])
+        self.reverse_flag = True
+        packetlist = currQS.order_by('pkt_id')[num_offset-num_limit:num_offset]
         return packetlist
 
     # Return all packets made after specified time delta
@@ -109,6 +123,11 @@ class AnalyseQuery(APIView):
             time__gte=datetime.datetime.now() - (limit_dt + offset_dt),
             time__lte=datetime.datetime.now() -
             offset_dt)
+        return packetlist
+
+    #Downsample queryset
+    def downsample(self, dsf, currQS):
+        packetlist = currQS[::dsf]
         return packetlist
 
     # Return all packets
@@ -151,6 +170,10 @@ class Driver(APIView):
         elif self.switch is 2:
             self.backup()
             return Response("Packet table backed up")
+
+        elif self.switch is 3:
+            Packet.objects.all().delete()
+            return Response("Packet table flushed")
 
         else:
             return Response("Something went wrong")
