@@ -34,7 +34,7 @@ class GetChannels(APIView):
     renderer_classes = [JSONRenderer]
 
     def get(self, request, qnode):
-        channel_qs = Channel.objects.filter(node=qnode)
+        channel_qs = Channel.objects.filter(node=qnode, direction='out')
         serializer = ChannelSerializer(channel_qs, many=True)
         return Response(serializer.data)
 
