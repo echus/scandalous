@@ -279,7 +279,7 @@ class CANReadThread(threading.Thread):
             data[2] <<  8 | \
             data[1] << 16 | \
             data[0] << 24
-        return value
+        return value/1000
 
     @staticmethod
     def calc_msg_type(ident):
