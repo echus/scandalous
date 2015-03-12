@@ -97,7 +97,8 @@ class CANDriver:
         return 1
 
     def send(self, node, channel, msg_type, data, timestamp):
-        if self.__running is not True:
+        logging.debug("Curr driver is")
+        if self.__running is False:
             return None
 
         # Calculate ID from relevant parameters
@@ -144,15 +145,14 @@ class CANDriver:
                 send_pkt += "\\"
             send_pkt += struct.pack("B", byte)
 
-        send_pkt += "r"
+        send_pkt += b"r"
 
         # END VOODOO, send pkt through serial connection
         self.__serial.write(send_pkt)
         return 1
 
-
-    def log(self):
-        pass
+    def is_running(self):
+        return self.__running
 
 class CANReadThread(threading.Thread):
     """Read CAN packets from specified serial port"""

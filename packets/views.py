@@ -149,14 +149,17 @@ class Driver(APIView):
     switch = None
 
     def get(self, request):
-        logging.debug(self.driver)
+        logging.debug("Curr driver is")
 
         if self.switch is 0:
-            dr_status = self.driver.run()
-            if dr_status is not None:
-                return Response("CAN Driver has started successfully")
+            if self.driver.is_running() is False:
+                dr_status = self.driver.run()
+                if dr_status is not None:
+                    return Response("CAN Driver has started successfully")
+                else:
+                    return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
             else:
-                return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                return Response("Can Driver is already running")
 
         elif self.switch is 1:
             run_status = self.driver.stop()
@@ -179,13 +182,15 @@ class Driver(APIView):
             return Response("Something went wrong")
 
     def post(self, request):
+        logging.debug("Curr driver is: %s", self.driver)
         packet = json.loads(request.body.decode('utf-8'))
         node = packet['node']
         channel = packet['channel']
         data = packet['data']
         msg_type = packet['msg_type']
         timestamp = int(time.time() * 1000)
-        if all([node, channel, msg_type, data, timestamp]):
+        pkt_vals = [node, channel, msg_type, data, timestamp]
+        if all(val is not None for val in pkt_vals):
             pkt_status = self.driver.send(node, channel, msg_type, data, timestamp)
             if pkt_status is not None:
                 return Response("Packet sent")
