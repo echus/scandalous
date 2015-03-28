@@ -90,7 +90,7 @@ STATIC_URL = '/static/'
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'handlers': {
         'default': {
             'level': 'DEBUG',

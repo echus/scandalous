@@ -58,7 +58,7 @@ class CANDriver:
         ser = self.connect()
         if ser is not None:
             print("Connected to serial port")
-            logger.debug("Connected to serial port, %s", ser)
+            logger.debug("Connected to Serial port: %s /n", ser)
             self.__serial = ser
             self.__running = True
 
@@ -82,7 +82,7 @@ class CANDriver:
             return ser
         except:
             print("Could not open serial port ", self.__port)
-            logger.debug("Could not open serial port %s", self.__port)
+            # logger.debug("Could not open serial port %s", self.__port)
             self.active = False
             time.sleep(1)
             return None
@@ -97,7 +97,7 @@ class CANDriver:
         return 1
 
     def send(self, node, channel, msg_type, data, timestamp):
-        logging.debug("Curr driver is")
+        logger.debug("Ser connection is: %s \n", self.__serial)
         if self.__running is False:
             return None
 
@@ -135,18 +135,18 @@ class CANDriver:
 
         bytes += [checksum]
 
-        send_pkt = struct.pack("B", ord("C"))
+        send_pkt = struct.pack(b"B", ord(b"C"))
 
         for byte in bytes:
             if byte == ord('q') or \
                     byte == ord('r') or \
                     byte == ord('C') or \
                     byte == ord('\\'):
-                send_pkt += "\\"
-            send_pkt += struct.pack("B", byte)
+                send_pkt += b"\\"
+            send_pkt += struct.pack(b"B", byte)
 
         send_pkt += b"r"
-
+        logger.debug("Packet sent is: \n %s \n", send_pkt)
         # END VOODOO, send pkt through serial connection
         self.__serial.write(send_pkt)
         return 1
@@ -162,7 +162,7 @@ class CANReadThread(threading.Thread):
         self.packets = packets  # Queue for packets read from serial
         self.stopped = threading.Event()    # Stop flag
         self.pkt_count = Packet.objects.all().count()      # Number of packets received
-        logger.debug("Have %i packets already", self.pkt_count)
+        # logger.debug("Have %i packets already", self.pkt_count)
 
     def run(self):
         packet     = []     # Store exact copy of packet (including delimiter)
@@ -171,7 +171,7 @@ class CANReadThread(threading.Thread):
         packet_mode = False    # Flag for beginning to store packet when delimiter received
 
         print("Reading packets!")
-        logger.debug("Reading packets!")
+        # logger.debug("Reading packets!")
 
         while not self.stopped.isSet():
             #print("Looping")

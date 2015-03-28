@@ -149,12 +149,13 @@ class Driver(APIView):
     switch = None
 
     def get(self, request):
-        logging.debug("Curr driver is")
+        logger.debug("Curr driver is: \n %s \n", self.driver)
 
         if self.switch is 0:
             if self.driver.is_running() is False:
                 dr_status = self.driver.run()
                 if dr_status is not None:
+                    logger.debug("Curr driver is: \n %s \n", self.driver)
                     return Response("CAN Driver has started successfully")
                 else:
                     return Response("CAN USB unavailable", status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -182,7 +183,7 @@ class Driver(APIView):
             return Response("Something went wrong")
 
     def post(self, request):
-        logging.debug("Curr driver is: %s", self.driver)
+        logger.debug("Curr driver is: \n %s \n", self.driver)
         packet = json.loads(request.body.decode('utf-8'))
         node = packet['node']
         channel = packet['channel']

@@ -17,7 +17,7 @@ class ActiveNodes(APIView):
 
     def get(self, request):
         # List of ALL CAN node addresses, reduce to only active nodes by elimination
-        node_list = [10, 20, 30, 31, 40, 41, 50, 60, 70, 80, 81]
+        node_list = [10, 20, 30, 31, 40, 41, 50, 60, 70, 80, 81, 200]
         active_nodes = []
         packets = Packet.objects.all()
 
