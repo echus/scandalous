@@ -10,6 +10,7 @@ from nodes.serializers import NodeSerializer
 from nodes.serializers import ChannelSerializer
 from packets.models import Packet
 
+import json
 
 class ActiveNodes(APIView):
     # Sets Response to prioritise rendering in JSON format
@@ -18,12 +19,13 @@ class ActiveNodes(APIView):
     def get(self, request):
         # List of ALL CAN node addresses, reduce to only active nodes by elimination
         node_list = [10, 20, 30, 31, 40, 41, 50, 60, 70, 80, 81, 200]
-        active_nodes = []
-        packets = Packet.objects.all()
+        active_nodes = node_list
+        #active_nodes = []
+        #packets = Packet.objects.all()
 
-        for curr_node in node_list:
-            if packets.filter(node=curr_node).exists():
-                active_nodes.append(curr_node)
+        #for curr_node in node_list:
+        #    if packets.filter(node=curr_node).exists():
+        #        active_nodes.append(curr_node)
 
         nodes_qs = Node.objects.filter(node__in=active_nodes)
         serializer = NodeSerializer(nodes_qs, many=True)
