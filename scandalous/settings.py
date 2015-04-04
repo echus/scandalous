@@ -95,12 +95,12 @@ LOGGING = {
         'default': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/var/www/public_html/scandalous/debug.log',
+            'filename': '/home/user/public_html/scandalous.com/scandalous/debug.log',
         },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/var/www/public_html/scandalous/debug.log',
+            'filename': '/home/user/public_html/scandalous.com/scandalous/debug.log',
         },
     },
     'loggers': {
