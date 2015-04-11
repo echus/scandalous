@@ -25,11 +25,13 @@ class ActiveNodes(APIView):
     renderer_classes = [JSONRenderer]
 
     def get(self, request):
+        # TODO check node is active based on heartbeats with timeout
+
         # Get active nodes
         active_nodes = set(Packet.objects.all().values_list('node'))
         active_nodes = [i[0] for i in active_nodes]
 
-        # Read all node config files
+        # Read all Scandal node config files
         nodes = []
         for fn in os.listdir(NODES_DIR):
             with open(os.path.join(NODES_DIR, fn)) as node_file:
@@ -41,10 +43,10 @@ class ActiveNodes(APIView):
         for node in nodes:
             if int(node["address"]) in active_nodes:
                 logger.error("In active_nodes")
-                n = OrderedDict()
-                n["node"] = node["address"]
-                n["device"] = node["name"]
-                response.append(n)
+                d = OrderedDict()
+                d["node"] = node["address"]
+                d["device"] = node["name"]
+                response.append(d)
 
         return Response(response)
 
@@ -52,9 +54,22 @@ class GetChannels(APIView):
     renderer_classes = [JSONRenderer]
 
     def get(self, request, qnode):
-        channel_qs = Channel.objects.filter(node=qnode, direction='out')
-        serializer = ChannelSerializer(channel_qs, many=True)
+        # TODO get active channels only?
 
-        logger.error("channels response")
-        logger.error(serializer.data)
-        return Response(serializer.data)
+        # Read channels for qnode from Scandal node config files
+        output_channels = []
+        for fn in os.listdir(NODES_DIR):
+            with open(os.path.join(NODES_DIR, fn)) as node_file:
+                for node in json.load(node_file):
+                    if int(node["address"]) == int(qnode):
+                        output_channels = node["output_channels"]
+
+        # Get list of channel numbers and names
+        response = []
+        for ch in output_channels:
+            d = OrderedDict()
+            d["channel"] = ch["channel"]
+            d["value"] = ch["name"]
+            response.append(d)
+
+        return Response(response)
