@@ -11,26 +11,42 @@ from nodes.serializers import ChannelSerializer
 from packets.models import Packet
 
 import json
+import os
+from collections import OrderedDict
+
+import logging
+
+NODES_DIR = "/home/user/public_html/scandalous.com/scandal-config/nodes"
+
+logger = logging.getLogger("scandalous.debug")
 
 class ActiveNodes(APIView):
     # Sets Response to prioritise rendering in JSON format
     renderer_classes = [JSONRenderer]
 
     def get(self, request):
-        # List of ALL CAN node addresses, reduce to only active nodes by elimination
-        node_list = [10, 20, 30, 31, 40, 41, 50, 60, 70, 80, 81, 200]
-        active_nodes = node_list
-        #active_nodes = []
-        #packets = Packet.objects.all()
+        # Get active nodes
+        active_nodes = set(Packet.objects.all().values_list('node'))
+        active_nodes = [i[0] for i in active_nodes]
 
-        #for curr_node in node_list:
-        #    if packets.filter(node=curr_node).exists():
-        #        active_nodes.append(curr_node)
+        # Read all node config files
+        nodes = []
+        for fn in os.listdir(NODES_DIR):
+            with open(os.path.join(NODES_DIR, fn)) as node_file:
+                for node in json.load(node_file):
+                    nodes.append(node)
 
-        nodes_qs = Node.objects.filter(node__in=active_nodes)
-        serializer = NodeSerializer(nodes_qs, many=True)
-        return Response(serializer.data)
+        # Get list of active node addresses and names
+        response = []
+        for node in nodes:
+            if int(node["address"]) in active_nodes:
+                logger.error("In active_nodes")
+                n = OrderedDict()
+                n["node"] = node["address"]
+                n["device"] = node["name"]
+                response.append(n)
 
+        return Response(response)
 
 class GetChannels(APIView):
     renderer_classes = [JSONRenderer]
@@ -38,9 +54,7 @@ class GetChannels(APIView):
     def get(self, request, qnode):
         channel_qs = Channel.objects.filter(node=qnode, direction='out')
         serializer = ChannelSerializer(channel_qs, many=True)
+
+        logger.error("channels response")
+        logger.error(serializer.data)
         return Response(serializer.data)
-
-
-
-
-
