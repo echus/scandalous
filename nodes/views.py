@@ -50,7 +50,7 @@ class ActiveNodes(APIView):
 
         return Response(response)
 
-class GetChannels(APIView):
+class OutChannels(APIView):
     renderer_classes = [JSONRenderer]
 
     def get(self, request, qnode):
@@ -67,6 +67,28 @@ class GetChannels(APIView):
         # Get list of channel numbers and names
         response = []
         for ch in output_channels:
+            d = OrderedDict()
+            d["channel"] = ch["channel"]
+            d["value"] = ch["name"]
+            response.append(d)
+
+        return Response(response)
+
+class InChannels(APIView):
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, qnode):
+        # Read channels for qnode from Scandal node config files
+        input_channels = []
+        for fn in os.listdir(NODES_DIR):
+            with open(os.path.join(NODES_DIR, fn)) as node_file:
+                for node in json.load(node_file):
+                    if int(node["address"]) == int(qnode):
+                        input_channels = node["input_channels"]
+
+        # Get list of channel numbers and names
+        response = []
+        for ch in input_channels:
             d = OrderedDict()
             d["channel"] = ch["channel"]
             d["value"] = ch["name"]
